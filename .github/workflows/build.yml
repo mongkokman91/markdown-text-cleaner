@@ -8,12 +8,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Unzip Project Files
+      - name: Unzip and Locate Android Project
         run: |
-          unzip markdown-text-cleaner.zip -d project/
-          cd project/*/android/ || cd project/android/ || cd project/
-          mv * ../../ || true
-          cd ../../
+          unzip markdown-text-cleaner.zip -d temp_unzip/
+          # Automatically search and find the folder containing 'gradlew'
+          GRADLE_DIR=$(find temp_unzip -name "gradlew" -exec dirname {} \;)
+          echo "Found Android project at: $GRADLE_DIR"
+          # Move all compile files to the workspace root
+          cp -r $GRADLE_DIR/* .
+          rm -rf temp_unzip
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
