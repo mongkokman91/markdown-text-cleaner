@@ -8,12 +8,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Unzip and Safe Locate Project
+      - name: Unzip and Locate Project
         run: |
           unzip markdown-text-cleaner.zip -d temp_unzip/
           
-          # Safely search for the directory containing settings.gradle.kts (the true project root)
-          ANDROID_DIR=$(find temp_unzip -name "settings.gradle.kts" -o -name "settings.gradle" -exec dirname {} \; | head -n 1)
+          # Direct lookup for the directory containing settings.gradle.kts
+          ANDROID_DIR=$(find temp_unzip -name "settings.gradle.kts" -exec dirname {} \; | head -n 1)
           
           if [ -z "$ANDROID_DIR" ]; then
             echo "Error: Android project files not found in ZIP!"
