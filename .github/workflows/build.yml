@@ -26,6 +26,12 @@ jobs:
           cp -r $ANDROID_DIR/* .
           rm -rf temp_unzip
 
+      - name: Patch Kotlin to 2.0.0 for Compose Compiler
+        run: |
+          # Upgrade all Kotlin 1.9.23 references to 2.0.0 so the Compose compiler is compatible
+          find . -name "*.kts" -exec sed -i 's/1.9.23/2.0.0/g' {} +
+          find . -name "*.toml" -exec sed -i 's/1.9.23/2.0.0/g' {} +
+
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
