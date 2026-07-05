@@ -8,14 +8,22 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Unzip and Locate Android Project
+      - name: Unzip and Safe Locate Project
         run: |
           unzip markdown-text-cleaner.zip -d temp_unzip/
-          # Automatically search and find the folder containing 'gradlew'
-          GRADLE_DIR=$(find temp_unzip -name "gradlew" -exec dirname {} \;)
-          echo "Found Android project at: $GRADLE_DIR"
-          # Move all compile files to the workspace root
-          cp -r $GRADLE_DIR/* .
+          
+          # Safely search for the directory containing settings.gradle.kts (the true project root)
+          ANDROID_DIR=$(find temp_unzip -name "settings.gradle.kts" -o -name "settings.gradle" -exec dirname {} \; | head -n 1)
+          
+          if [ -z "$ANDROID_DIR" ]; then
+            echo "Error: Android project files not found in ZIP!"
+            exit 1
+          fi
+          
+          echo "Found Android root at: $ANDROID_DIR"
+          
+          # Copy the Android files to the root workspace safely
+          cp -r $ANDROID_DIR/* .
           rm -rf temp_unzip
 
       - name: Set up JDK 17
@@ -24,8 +32,13 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Grant Execute Permissions for Gradle
-        run: chmod +x ./gradlew
+      - name: Generate Gradle Wrapper (If Missing)
+        run: |
+          if [ ! -f "./gradlew" ]; then
+            echo "Gradlew wrapper missing. Generating wrapper..."
+            gradle wrapper
+          fi
+          chmod +x ./gradlew
 
       - name: Assemble Debug APK
         run: ./gradlew assembleDebug
