@@ -23,10 +23,8 @@ jobs:
           cp -r $ANDROID_DIR/* .
           rm -rf temp_unzip
 
-      - name: Patch Kotlin & Inject Material Library
+      - name: Inject Material Library Dependency
         run: |
-          find . -name "*.kts" -exec sed -i 's/1.9.23/2.0.0/g' {} +
-          find . -name "*.toml" -exec sed -i 's/1.9.23/2.0.0/g' {} +
           sed -i '/dependencies {/a \    implementation("com.google.android.material:material:1.12.0")' app/build.gradle.kts || true
 
       - name: Generate Real Launcher Icons
