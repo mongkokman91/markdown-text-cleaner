@@ -26,6 +26,10 @@ jobs:
       - name: Apply Updated MainActivity.kt
         run: |
           cp MainActivity.kt app/src/main/java/com/example/markdowntextcleaner/MainActivity.kt
+      
+      - name: Apply Updated AndroidManifest.xml
+        run: |
+          cp AndroidManifest.xml app/src/main/AndroidManifest.xml
 
       - name: Remove Unused Kotlin-2.0-only Plugin Reference
         run: |
