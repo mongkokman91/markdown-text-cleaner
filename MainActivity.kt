@@ -53,7 +53,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Handle incoming share intent
+        // If this launch came from the long-press "Process Text" menu on an editable
+        // selection, handle it silently and finish immediately - no UI needed.
+        if (handleProcessTextIfEditable(intent)) {
+            return
+        }
+
+        // Handle incoming share intent, or a read-only "Process Text" selection
         handleIntent(intent)
 
         setContent {
@@ -101,7 +107,54 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        if (handleProcessTextIfEditable(intent)) {
+            return
+        }
         handleIntent(intent)
+    }
+
+    /**
+     * Handles the case where the app was launched from the long-press "Process Text"
+     * selection menu on text the user can actually edit (e.g. a text field, a note, a
+     * message draft). In that case Android lets us hand back the cleaned text and it
+     * replaces the selection in place - no need to open any UI at all.
+     *
+     * Returns true if this was such a case and the activity has already finished.
+     * Returns false otherwise (caller should proceed to handleIntent() as normal).
+     */
+    private fun handleProcessTextIfEditable(intent: Intent?): Boolean {
+        if (intent?.action != Intent.ACTION_PROCESS_TEXT) return false
+
+        val selectedText = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString()
+            ?: return false
+        val isReadOnly = intent.getBooleanExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, true)
+        val cleaned = cleanMarkdownText(selectedText)
+
+        if (!isReadOnly) {
+            // Selection is editable: hand the cleaned text back and Android replaces
+            // it in place. Also copy it to the clipboard as a convenience/backup.
+            val resultIntent = Intent()
+            resultIntent.putExtra(Intent.EXTRA_PROCESS_TEXT, cleaned as CharSequence)
+            setResult(RESULT_OK, resultIntent)
+            copyToClipboard(cleaned, showToast = false)
+            finish()
+            return true
+        }
+
+        // Read-only selection (e.g. a webpage): can't replace it in place, so fall
+        // back to the normal flow - show it in the app and copy it to clipboard.
+        cleanedText = cleaned
+        copyToClipboard(cleaned, showToast = true)
+        return false
+    }
+
+    private fun copyToClipboard(text: String, showToast: Boolean = true) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("Cleaned Text", text)
+        clipboard.setPrimaryClip(clip)
+        if (showToast) {
+            Toast.makeText(this, "Copied cleaned text to clipboard", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun handleIntent(intent: Intent?) {
@@ -113,15 +166,8 @@ class MainActivity : ComponentActivity() {
                 copyToClipboard(cleanedText, showToast = true)
             }
         }
-    }
-
-    private fun copyToClipboard(text: String, showToast: Boolean = true) {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Cleaned Text", text)
-        clipboard.setPrimaryClip(clip)
-        if (showToast) {
-            Toast.makeText(this, "Copied cleaned text to clipboard", Toast.LENGTH_SHORT).show()
-        }
+        // Note: read-only PROCESS_TEXT intents are already handled inside
+        // handleProcessTextIfEditable() above, which sets cleanedText itself.
     }
 
     private fun cleanMarkdownText(text: String): String {
