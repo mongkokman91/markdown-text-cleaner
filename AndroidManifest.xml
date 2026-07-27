@@ -24,8 +24,18 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
+        </activity>
 
-            <!-- Intent Filter to register in the text-selection long-press/context menu -->
+        <!-- Invisible activity for the long-press/context-menu "Process Text" entry.
+             Uses a translucent, no-history theme so it never shows a window or steals
+             focus from whatever app the user was in - it just runs and finishes. -->
+        <activity
+            android:name=".ProcessTextActivity"
+            android:exported="true"
+            android:label="Markdown Text Cleaner"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true">
             <intent-filter>
                 <action android:name="android.intent.action.PROCESS_TEXT" />
                 <category android:name="android.intent.category.DEFAULT" />
