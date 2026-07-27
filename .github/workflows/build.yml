@@ -23,9 +23,10 @@ jobs:
           cp -r $ANDROID_DIR/* .
           rm -rf temp_unzip
 
-      - name: Apply Updated MainActivity.kt
+      - name: Apply Updated Files
         run: |
           cp MainActivity.kt app/src/main/java/com/example/markdowntextcleaner/MainActivity.kt
+          cp ProcessTextActivity.kt app/src/main/java/com/example/markdowntextcleaner/ProcessTextActivity.kt
       
       - name: Apply Updated AndroidManifest.xml
         run: |
