@@ -124,15 +124,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun cleanMarkdownText(text: String): String {
-        // a) Replace all line breaks, newlines (\n), and carriage returns (\r) with a single space.
-        var result = text.replace(Regex("[\\r\\n]+"), " ")
-        // b) Replace all double/multiple spaces, tabs, and excess whitespace with a single space.
-        result = result.replace(Regex("\\s+"), " ")
-        // c) Trim any trailing or leading whitespace from the start and end of the document.
-        return result.trim()
-    }
-
     private fun shareCleanedText() {
         if (cleanedText.isEmpty()) {
             Toast.makeText(this, "Nothing to share", Toast.LENGTH_SHORT).show()
@@ -247,7 +238,7 @@ fun MainScreen(
                 ) {
                     Button(
                         onClick = {
-                            val cleanResult = manualInput.replace(Regex("[\\r\\n]+"), " ").replace(Regex("\\s+"), " ").trim()
+                            val cleanResult = cleanMarkdownText(manualInput)
                             onTextChanged(cleanResult)
                             isManualMode = false
                         },

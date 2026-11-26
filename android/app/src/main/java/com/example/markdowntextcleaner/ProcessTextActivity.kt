@@ -51,12 +51,6 @@ class ProcessTextActivity : Activity() {
         finish()
     }
 
-    private fun cleanMarkdownText(text: String): String {
-        var result = text.replace(Regex("[\\r\\n]+"), " ")
-        result = result.replace(Regex("\\s+"), " ")
-        return result.trim()
-    }
-
     private fun copyToClipboard(text: String, showToast: Boolean) {
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("Cleaned Text", text)

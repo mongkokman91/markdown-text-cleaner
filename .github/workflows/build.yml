@@ -1,75 +1,29 @@
 name: Build Android APK
-on: [push]
-
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Unzip and Locate Project
-        run: |
-          unzip markdown-text-cleaner.zip -d temp_unzip/
-
-          ANDROID_DIR=$(find temp_unzip -name "settings.gradle.kts" -exec dirname {} \; | head -n 1)
-
-          if [ -z "$ANDROID_DIR" ]; then
-            echo "Error: Android project files not found in ZIP!"
-            exit 1
-          fi
-
-          echo "Found Android root at: $ANDROID_DIR"
-          cp -r $ANDROID_DIR/* .
-          rm -rf temp_unzip
-
-      - name: Apply Updated Files
-        run: |
-          cp MainActivity.kt app/src/main/java/com/example/markdowntextcleaner/MainActivity.kt
-          cp ProcessTextActivity.kt app/src/main/java/com/example/markdowntextcleaner/ProcessTextActivity.kt
-      
-      - name: Apply Updated AndroidManifest.xml
-        run: |
-          cp AndroidManifest.xml app/src/main/AndroidManifest.xml
-
-      - name: Remove Unused Kotlin-2.0-only Plugin Reference
-        run: |
-          sed -i '/alias(libs.plugins.kotlin.compose)/d' build.gradle.kts
-
-      - name: Inject Material Library Dependency
-        run: |
-          sed -i '/dependencies {/a \    implementation("com.google.android.material:material:1.12.0")\n    implementation("androidx.compose.material:material-icons-extended")' app/build.gradle.kts || true
-
-      - name: Generate Real Launcher Icons
-        run: |
-          ICON_B64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
-
-          for DENSITY in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-            DIR="app/src/main/res/mipmap-$DENSITY"
-            mkdir -p "$DIR"
-            echo "$ICON_B64" | base64 -d > "$DIR/ic_launcher.png"
-            echo "$ICON_B64" | base64 -d > "$DIR/ic_launcher_round.png"
-          done
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
-
-      - name: Generate Gradle Wrapper (If Missing)
-        run: |
-          if [ ! -f "./gradlew" ]; then
-            echo "Gradlew wrapper missing. Generating wrapper..."
-            gradle wrapper
-          fi
-          chmod +x ./gradlew
-
-      - name: Assemble Debug APK
-        run: ./gradlew assembleDebug
-
-      - name: Upload Finished APK
-        uses: actions/upload-artifact@v4
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.6'
+      - name: Test and build
+        run: gradle --no-daemon testDebugUnitTest assembleDebug
+      - uses: actions/upload-artifact@v4
         with:
           name: Markdown-Cleaner-App
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
